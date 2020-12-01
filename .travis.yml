@@ -11,8 +11,8 @@ install:
 script:
   - pip install -v -e .
   - mkdir ~/tmp
-  - cp distance/data/model4taup10.nd ~/tmp/
-  - cp distance/test_distance.py ~/tmp/
+  - cp taup_distance/data/model4taup10.nd ~/tmp/
+  - cp taup_distance/test_distance.py ~/tmp/
   - cd ~/tmp
-  - python -m distance.distance ./model4taup10.nd 200 300
+  - python -m taup_distance.taup_distance ./model4taup10.nd 200 300
   - python ./test_distance.py

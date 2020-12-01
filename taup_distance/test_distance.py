@@ -7,7 +7,7 @@
 :license:
     None
 """
-from distance.distance import get_distance
+from taup_distance.taup_distance import get_distance
 from obspy.taup import TauPyModel
 model = TauPyModel('iasp91')
 

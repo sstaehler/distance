@@ -18,7 +18,7 @@ from os.path import split as psplit
 
 
 def define_arguments():
-    helptext = 'Compute distance from TauP model, given a S-P traveltime difference'
+    helptext = 'Compute taup_distance from TauP model, given a S-P traveltime difference'
     parser = ArgumentParser(description=helptext)
 
     helptext = "Input TauP file"
@@ -39,13 +39,13 @@ def get_dist(model: TauPyModel,
              phase_list=('P', 'S'),
              plot=False):
     """
-    Get distance of an event, given difference between two phase arrival times (default: P and S)
+    Get taup_distance of an event, given difference between two phase arrival times (default: P and S)
     :param model: TauPyModel object for given velocity model
     :param tSmP: time difference between arrivals in seconds
     :param depth: depth of event in km
     :param phase_list: list-like object with two phase names
     :param plot: plot convergence (default: False)
-    :return: distance of event in degree
+    :return: taup_distance of event in degree
     """
     from scipy.optimize import newton
 
@@ -82,7 +82,7 @@ def _get_TSmP(distance: float,
               depth: float):
     """
     Compute travel time difference between two phases (minus tmeas)
-    :param distance: distance in degree
+    :param distance: taup_distance in degree
     :param model: TauPy model
     :param tmeas: measured travel time difference
     :param phase_list: phase names
@@ -126,7 +126,7 @@ def _get_SSmP(distance: float,
     Compute derivative of travel time difference between two phases (minus tmeas)
     Uses slowness of the two phases.
     Used to compute derivative for fitting. Some unused arguments, but argument list needs to be identical to _get_TSmP.
-    :param distance: distance in degree
+    :param distance: taup_distance in degree
     :param model: TauPy model
     :param tmeas: measured travel time difference
     :param phase_list: phase names
@@ -172,7 +172,7 @@ def main(fnam_nd, times, phase_list=('P', 'S'), depth=40., plot=False):
         if dist is None:
             print(f'{fnam_nd}, S-P time: {tSmP:5.1f}: NO SOLUTION FOUND!')
         else:
-            print(f'{fnam_nd}, S-P time: {tSmP:5.1f}, distance: {dist:5.1f}')
+            print(f'{fnam_nd}, S-P time: {tSmP:5.1f}, taup_distance: {dist:5.1f}')
 
 
 if __name__ == '__main__':
