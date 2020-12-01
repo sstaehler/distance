@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/sstaehler/distance.svg?branch=master)](https://travis-ci.org/sstaehler/distance)
+
 # distance
 Compute the distance of an earthquake given a seismic velocity model and a travel time difference between two phases (typically P and S).
 
