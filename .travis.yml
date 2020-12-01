@@ -11,6 +11,6 @@ install:
 script:
   - pip install -v -e .
   - mkdir ~/tmp
-  - cp pred_tstar/data/model4taup10.nd ~/tmp/
+  - cp distance/data/model4taup10.nd ~/tmp/
   - cd ~/tmp
-  - python -m pred_tstar.pred_tstar ./model4taup10.nd --times 200 300
+  - python -m distance.distance ./model4taup10.nd 200 300
