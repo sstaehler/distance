@@ -1,4 +1,7 @@
 [![Build Status](https://travis-ci.org/sstaehler/distance.svg?branch=master)](https://travis-ci.org/sstaehler/distance)
+[![DOI](https://zenodo.org/badge/317642884.svg)](https://zenodo.org/badge/latestdoi/317642884)
+
+
 
 # taup_distance
 Compute the distance of an earthquake given a seismic velocity model and a travel time difference between two phases (typically P and S).
