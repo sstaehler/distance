@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/sstaehler/distance.svg?branch=master)](https://travis-ci.org/sstaehler/distance)
+[![Build Status](https://travis-ci.org/sstaehler/taup_distance.svg?branch=master)](https://travis-ci.org/sstaehler/taup_distance)
 [![DOI](https://zenodo.org/badge/317642884.svg)](https://zenodo.org/badge/latestdoi/317642884)
 
 
@@ -33,11 +33,11 @@ $ python -m taup_distance.taup_distance ./taup_file.nd 200 300 400
 ```
 as well as a Python function 
 ```python
-from taup_distance.taup_distance import get_distance
+from taup_distance.taup_distance import get_dist
 from obspy.taup import TauPyModel
 model = TauPyModel('iasp91')
 
-dist = get_distance(tSmP=400, 
-                    depth=50.)
+dist = get_dist(tSmP=400, 
+                depth=50.)
 print(dist)
 ```
