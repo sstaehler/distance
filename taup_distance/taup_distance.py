@@ -27,6 +27,10 @@ def define_arguments():
     helptext = "S-P arrival time differences"
     parser.add_argument('times', nargs='+', type=float, help=helptext)
 
+    helptext = "Plot rays of best solution"
+    parser.add_argument('--plot_rays', action="store_true", default=False,
+                        help=helptext)
+
     helptext = "Plot convergence in T-X plot (default: False)"
     parser.add_argument('--plot', action="store_true", default=False,
                         help=helptext)
@@ -37,14 +41,14 @@ def get_dist(model: TauPyModel,
              tSmP: float,
              depth: float,
              phase_list=('P', 'S'),
-             plot=False):
+             plot_convergence=False):
     """
     Get taup_distance of an event, given difference between two phase arrival times (default: P and S)
     :param model: TauPyModel object for given velocity model
     :param tSmP: time difference between arrivals in seconds
     :param depth: depth of event in km
     :param phase_list: list-like object with two phase names
-    :param plot: plot convergence (default: False)
+    :param plot_convergence: plot convergence (default: False)
     :return: taup_distance of event in degree
     """
     from scipy.optimize import newton
@@ -53,7 +57,8 @@ def get_dist(model: TauPyModel,
     dist0 = tSmP / 6.5
     try:
         dist = newton(func=_get_TSmP, fprime=_get_SSmP,
-                      x0=dist0, args=(model, tSmP, phase_list, plot, depth),
+                      x0=dist0, args=(model, tSmP, phase_list,
+                                      plot_convergence, depth),
                       maxiter=10)
     except RuntimeError:
         dist = None
@@ -63,12 +68,13 @@ def get_dist(model: TauPyModel,
         try:
             dist = newton(func=_get_TSmP, fprime=_get_SSmP,
                           x0=dist0,
-                          args=(model, tSmP, phase_list, plot, depth),
+                          args=(model, tSmP, phase_list,
+                                plot_convergence, depth),
                           maxiter=10)
         except RuntimeError:
             dist = None
 
-    if plot:
+    if plot_convergence:
         plt.axhline(tSmP)
         plt.show()
     return dist
@@ -158,7 +164,8 @@ def _get_SSmP(distance: float,
         return sS - sP
 
 
-def main(fnam_nd, times, phase_list=('P', 'S'), depth=40., plot=False):
+def main(fnam_nd, times, phase_list=('P', 'S'),
+         depth=40., plot=False, plot_rays=False):
     fnam_npz = './taup_tmp/' \
                + psplit(fnam_nd)[-1][:-3] + '.npz'
     build_taup_model(fnam_nd,
@@ -167,14 +174,76 @@ def main(fnam_nd, times, phase_list=('P', 'S'), depth=40., plot=False):
     cache = OrderedDict()
     model = TauPyModel(model=fnam_npz, cache=cache)
 
-    for tSmP in times:
-        dist = get_dist(model, tSmP=tSmP, depth=depth, phase_list=phase_list, plot=plot)
+    if plot_rays:
+        fig, ax = plt.subplots(1, 1)
+
+    for itime, tSmP in enumerate(times):
+        dist = get_dist(model, tSmP=tSmP, depth=depth, phase_list=phase_list)
         if dist is None:
             print(f'{fnam_nd}, S-P time: {tSmP:5.1f}: NO SOLUTION FOUND!')
         else:
             print(f'{fnam_nd}, S-P time: {tSmP:5.1f}, taup_distance: {dist:5.1f}')
 
+        if plot_rays:
+            if dist is None:
+                ax.plot((-200), (-200),
+                        label='%4.1f sec, NO SOLUTION' % (tSmP), c='white',
+                        lw=0.0)
+            else:
+                arrivals = model.get_ray_paths(distance_in_degree=dist,
+                                               source_depth_in_km=depth,
+                                               phase_list=['P', 'S'])
+
+                RADIUS_MARS = 3389.5
+                already_plotted = dict(P=False,
+                                       S=False)
+                ls = dict(P='solid', S='dashed')
+                label = dict(P='P-wave, %4.1f sec, %5.1f°' % (tSmP, dist),
+                             S='S-wave, idem')
+                for arr in arrivals:
+                    if not already_plotted[arr.name]:
+                        already_plotted[arr.name] = True
+                        x = (RADIUS_MARS - arr.path['depth']) * \
+                            np.sin(arr.path['dist'])
+                        y = (RADIUS_MARS - arr.path['depth']) * \
+                            np.cos(arr.path['dist'])
+                        ax.plot(x, y, c='C%d' % itime, ls=ls[arr.name],
+                                label=label[arr.name],
+                                lw=1.2)
+            #plt.polar(arr[0].path['dist'], 3389.5 - arr[0].path['depth'])
+
+    if plot_rays:
+        for layer_depth in model.model.get_branch_depths(): #(0, 10, 50, 1000,
+                                                          #1500):
+            angles = np.linspace(0, 2 * np.pi, 1000)
+            x_circle = (RADIUS_MARS - layer_depth) * np.sin(angles)
+            y_circle = (RADIUS_MARS - layer_depth) * np.cos(angles)
+            ax.plot(x_circle, y_circle, c='k', ls='dashed', lw=0.5,
+                    zorder=-1)
+        for layer_depth in (model.model.cmb_depth, 0.0):
+            angles = np.linspace(0, 2 * np.pi, 1000)
+            x_circle = (RADIUS_MARS - layer_depth) * np.sin(angles)
+            y_circle = (RADIUS_MARS - layer_depth) * np.cos(angles)
+            ax.plot(x_circle, y_circle, c='k', ls='solid', lw=1.0)
+
+        for layer_depth in [1000.0]:
+            angles = np.linspace(0, 2 * np.pi, 1000)
+            x_circle = (RADIUS_MARS - layer_depth) * np.sin(angles)
+            y_circle = (RADIUS_MARS - layer_depth) * np.cos(angles)
+            ax.plot(x_circle, y_circle, c='k', ls='dotted', lw=0.3)
+
+        ax.set_xlim(-100, RADIUS_MARS + 100)
+        ax.set_ylim(-100, RADIUS_MARS + 100)
+        ax.set_xlabel('radius / km')
+        ax.set_ylabel('radius / km')
+        ax.set_title('Ray path for model %s' % fnam_nd)
+        ax.set_aspect('equal', 'box')
+        ax.legend()
+        plt.show()
+
 
 if __name__ == '__main__':
     args = define_arguments()
-    main(fnam_nd=args.fnam_nd, times=args.times, plot=args.plot)
+    main(fnam_nd=args.fnam_nd, times=args.times,
+         plot=args.plot,
+         plot_rays=args.plot_rays)
