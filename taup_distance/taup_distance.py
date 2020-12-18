@@ -18,11 +18,12 @@ from os.path import split as psplit
 
 
 def define_arguments():
-    helptext = 'Compute taup_distance from TauP model, given a S-P traveltime difference'
+    helptext = 'Compute taup_distance from TauP model, given a S-P ' \
+               'traveltime difference'
     parser = ArgumentParser(description=helptext)
 
     helptext = "Input TauP file"
-    parser.add_argument('fnam_nd', help=helptext)
+    parser.add_argument('fnam_in', help=helptext)
 
     helptext = "S-P arrival time differences"
     parser.add_argument('times', nargs='+', type=float, help=helptext)
@@ -36,6 +37,39 @@ def define_arguments():
                         help=helptext)
     return parser.parse_args()
 
+def deck2nd(fnam_deck, fnam_nd):
+    model_deck = np.loadtxt(fname=fnam_deck, skiprows=3,
+                            usecols=(0, 1, 2, 3))
+    with open(file=fnam_deck, mode='r') as f:
+        _ = f.readline()
+        _ = f.readline()
+        line = f.readline()
+        nlines, nic, noc, tmp1, tmp2, nmoho, nconrad = line.split()
+    nlines = int(nlines) - 1
+    nic =  int(nic)
+    noc =  int(noc)
+    nmoho =  int(nmoho)
+    radius_planet = model_deck[-1][0] * 1e-3
+
+    with open(file=fnam_nd, mode='w') as f_nd:
+        for iline in range(nlines, 0, -1):
+            depth = radius_planet - model_deck[iline][0] * 1e-3
+            vp = model_deck[iline][2] * 1e-3
+            vs = model_deck[iline][3] * 1e-3
+            # Some people like to create quasi-liquid layers
+            if vs < 0.1:
+                vs = 0.
+            rho = model_deck[iline][1] * 1e-3
+            f_nd.write('%10.4f %7.4f %7.4f %7.4f\n' % (depth, vp, vs, rho))
+            if iline == nic:
+                f_nd.write('inner-core\n')
+            elif iline == noc:
+                f_nd.write('outer-core\n')
+            elif iline == nmoho:
+                f_nd.write('mantle\n')
+
+    return
+
 
 def get_dist(model: TauPyModel,
              tSmP: float,
@@ -43,7 +77,8 @@ def get_dist(model: TauPyModel,
              phase_list=('P', 'S'),
              plot_convergence=False):
     """
-    Get taup_distance of an event, given difference between two phase arrival times (default: P and S)
+    Get taup_distance of an event, given difference between
+    two phase arrival times (default: P and S)
     :param model: TauPyModel object for given velocity model
     :param tSmP: time difference between arrivals in seconds
     :param depth: depth of event in km
@@ -131,7 +166,8 @@ def _get_SSmP(distance: float,
     """
     Compute derivative of travel time difference between two phases (minus tmeas)
     Uses slowness of the two phases.
-    Used to compute derivative for fitting. Some unused arguments, but argument list needs to be identical to _get_TSmP.
+    Used to compute derivative for fitting. Some unused arguments,
+    but argument list needs to be identical to _get_TSmP.
     :param distance: taup_distance in degree
     :param model: TauPy model
     :param tmeas: measured travel time difference
@@ -182,7 +218,8 @@ def main(fnam_nd, times, phase_list=('P', 'S'),
         if dist is None:
             print(f'{fnam_nd}, S-P time: {tSmP:5.1f}: NO SOLUTION FOUND!')
         else:
-            print(f'{fnam_nd}, S-P time: {tSmP:5.1f}, taup_distance: {dist:5.1f}')
+            print(f'{fnam_nd}, S-P time: {tSmP:5.1f}, '
+                  f'taup_distance: {dist:5.1f}')
 
         if plot_rays:
             if dist is None:
@@ -210,7 +247,6 @@ def main(fnam_nd, times, phase_list=('P', 'S'),
                         ax.plot(x, y, c='C%d' % itime, ls=ls[arr.name],
                                 label=label[arr.name],
                                 lw=1.2)
-            #plt.polar(arr[0].path['dist'], 3389.5 - arr[0].path['depth'])
 
     if plot_rays:
         for layer_depth in model.model.get_branch_depths(): #(0, 10, 50, 1000,
@@ -226,7 +262,7 @@ def main(fnam_nd, times, phase_list=('P', 'S'),
             y_circle = (RADIUS_MARS - layer_depth) * np.cos(angles)
             ax.plot(x_circle, y_circle, c='k', ls='solid', lw=1.0)
 
-        for layer_depth in [1000.0]:
+        for layer_depth in [1100.0]:
             angles = np.linspace(0, 2 * np.pi, 1000)
             x_circle = (RADIUS_MARS - layer_depth) * np.sin(angles)
             y_circle = (RADIUS_MARS - layer_depth) * np.cos(angles)
@@ -244,6 +280,12 @@ def main(fnam_nd, times, phase_list=('P', 'S'),
 
 if __name__ == '__main__':
     args = define_arguments()
-    main(fnam_nd=args.fnam_nd, times=args.times,
+    if args.fnam_in[-5:] == '.deck':
+        fnam_nd = 'test.nd'
+        deck2nd(args.fnam_in, fnam_nd=fnam_nd)
+    else:
+        fnam_nd = args.fnam_in
+
+    main(fnam_nd=fnam_nd, times=args.times,
          plot=args.plot,
          plot_rays=args.plot_rays)
