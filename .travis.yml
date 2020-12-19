@@ -17,6 +17,6 @@ script:
   - python -m taup_distance.taup_distance ./model_example.nd 200 300
   - python -m taup_distance.taup_distance ./model_example_no_ic.nd 200 300
   - python -m taup_distance.taup_distance ./model_example.deck 200 300
-  - python ./test_distance.py
+  - coverage run ./test_distance.py
 after_success:
   - codecov # submit coverage
