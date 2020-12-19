@@ -11,10 +11,11 @@ install:
 script:
   - pip install -v -e .
   - mkdir ~/tmp
-  - cp taup_distance/data/model_example.* ~/tmp/
+  - cp taup_distance/data/model_example* ~/tmp/
   - cp taup_distance/test_distance.py ~/tmp/
   - cd ~/tmp
   - python -m taup_distance.taup_distance ./model_example.nd 200 300
+  - python -m taup_distance.taup_distance ./model_example_no_ic.nd 200 300
   - python -m taup_distance.taup_distance ./model_example.deck 200 300
   - python ./test_distance.py
 after_success:
